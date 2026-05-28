@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#f5f5f3">
+<meta name="mobile-web-app-capable" content="yes">
+<title>習慣トラッカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f5f3;
+  --bg2: #ffffff;
+  --bg3: #eceae6;
+  --fg: #1a1917;
+  --fg2: #6b6864;
+  --fg3: #a8a5a0;
+  --accent: #5b8c2a;
+  --accent2: #4a7322;
+  --accent-light: #d4edaa;
+  --danger: #e03e3e;
+  --warn: #c47c00;
+  --border: #e2dfd9;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+/* Category color variables */
+:root {
+  --cat-health:  #22a855;
+  --cat-study:   #2563eb;
+  --cat-hobby:   #db2777;
+  --cat-work:    #ea6c00;
+  --cat-mental:  #7c3aed;
+  --cat-other:   #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  padding-bottom: 90px;
+  overflow-x: hidden;
+}
+
+/* ── Header ── */
+.header { padding: 52px 24px 20px; }
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+.app-name { font-size: 13px; font-weight: 300; letter-spacing: 0.15em; color: var(--fg2); font-family: 'DM Mono', monospace; }
+.date-badge { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--fg3); background: var(--bg3); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); }
+.greeting { font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 5px; }
+.greeting-sub { font-size: 13px; color: var(--fg2); font-weight: 300; }
+
+/* ── Progress ring ── */
+.progress-ring-wrap { display: flex; justify-content: center; margin: 8px 0 18px; }
+.ring-text { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 400; fill: var(--fg); }
+.ring-sub { font-size: 10px; fill: var(--fg3); font-family: 'Noto Sans JP', sans-serif; }
+
+/* ── Stats row ── */
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 0 24px; margin-bottom: 24px; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.stat-card.highlight { border-color: var(--accent); background: rgba(91,140,42,0.06); }
+.stat-num { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 400; line-height: 1; margin-bottom: 4px; }
+.stat-num.green { color: var(--accent); }
+.stat-lbl { font-size: 10px; color: var(--fg3); letter-spacing: 0.08em; }
+
+/* ── Category filter tabs ── */
+.cat-filter { padding: 0 24px; margin-bottom: 14px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.cat-filter::-webkit-scrollbar { display: none; }
+.cat-tab {
+  flex-shrink: 0;
+  font-size: 12px; font-family: 'Noto Sans JP', sans-serif;
+  padding: 5px 13px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg2); color: var(--fg3);
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.cat-tab.active { color: #fff; border-color: transparent; font-weight: 500; }
+
+/* ── Section label ── */
+.section-label { padding: 0 24px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.section-title { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; color: var(--fg3); text-transform: uppercase; }
+.section-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--fg3); }
+
+/* ── Habit list ── */
+.habit-list { padding: 0 24px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.habit-item {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.1s;
+  position: relative; overflow: hidden; user-select: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.habit-item:active { transform: scale(0.98); }
+/* Left color bar */
+.habit-item::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  transition: opacity 0.2s; border-radius: 4px 0 0 4px;
+}
+/* Category background tint when done */
+.habit-item.done { background: var(--bg3); }
+
+/* Check button */
+.check-btn {
+  width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border);
+  background: transparent; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.2s;
+}
+.check-icon { width: 14px; height: 14px; opacity: 0; transition: opacity 0.2s; }
+.check-icon path { stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.habit-item.done .check-icon { opacity: 1; }
+
+/* Habit info */
+.habit-info { flex: 1; min-width: 0; }
+.habit-name { font-size: 15px; font-weight: 500; color: var(--fg); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.2s; }
+.habit-item.done .habit-name { color: var(--fg2); text-decoration: line-through; text-decoration-color: var(--fg3); }
+.habit-meta { font-size: 11px; color: var(--fg3); font-family: 'DM Mono', monospace; display: flex; align-items: center; gap: 6px; }
+.cat-pill { font-size: 10px; padding: 1px 7px; border-radius: 999px; font-weight: 500; letter-spacing: 0.04em; font-family: 'Noto Sans JP', sans-serif; }
+.streak-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--warn); flex-shrink: 0; }
+.habit-item.done .streak-dot { background: var(--accent); }
+
+/* Delete button */
+.delete-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--fg3); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: color 0.2s, background 0.2s; font-size: 16px; line-height: 1; }
+.delete-btn:hover { color: var(--danger); background: rgba(224,62,62,0.08); }
+
+/* ── Week heatmap ── */
+.heatmap-wrap { padding: 0 24px; margin-bottom: 24px; }
+.heatmap-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; }
+.heatmap-day { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.heatmap-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--fg3); }
+.heatmap-cell { width: 100%; aspect-ratio: 1; border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); transition: background 0.2s; }
+.heatmap-cell.today { border-color: var(--accent); }
+.heatmap-cell.full { background: var(--accent); border-color: var(--accent); }
+.heatmap-cell.partial { background: rgba(91,140,42,0.35); border-color: transparent; }
+.heatmap-cell.low { background: rgba(91,140,42,0.15); border-color: transparent; }
+
+/* ── Add form ── */
+.add-section { padding: 0 24px; margin-bottom: 16px; }
+.add-form { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.add-input { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; color: var(--fg); font-family: 'Noto Sans JP', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.add-input:focus { border-color: var(--accent); }
+.add-input::placeholder { color: var(--fg3); }
+.add-btn { width: 44px; height: 44px; background: var(--accent); border: none; border-radius: var(--radius-sm); color: #fff; font-size: 22px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s, transform 0.1s; line-height: 1; }
+.add-btn:active { transform: scale(0.95); background: var(--accent2); }
+
+/* Category selector in add form */
+.cat-select-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.cat-select-btn {
+  font-size: 12px; padding: 5px 12px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg2); color: var(--fg3);
+  cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans JP', sans-serif;
+  display: flex; align-items: center; gap: 5px;
+}
+.cat-select-btn.selected { color: #fff; border-color: transparent; font-weight: 500; }
+.cat-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+/* Emoji picker */
+.emoji-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.emoji-opt { width: 36px; height: 36px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, background 0.15s; }
+.emoji-opt.selected { border-color: var(--accent); background: rgba(91,140,42,0.1); }
+
+/* ── Category stats card ── */
+.cat-stats { padding: 0 24px; margin-bottom: 24px; }
+.cat-stat-row { display: flex; flex-direction: column; gap: 8px; }
+.cat-stat-item { display: flex; align-items: center; gap: 10px; }
+.cat-stat-label { font-size: 12px; color: var(--fg2); width: 56px; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif; }
+.cat-stat-bar-wrap { flex: 1; height: 6px; background: var(--bg3); border-radius: 999px; overflow: hidden; }
+.cat-stat-bar { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+.cat-stat-pct { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--fg3); width: 32px; text-align: right; }
+
+/* ── Views ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── Stats view ── */
+.stats-view-content { padding: 0 24px 24px; }
+.big-stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; text-align: center; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.big-stat-num { font-family: 'DM Mono', monospace; font-size: 56px; font-weight: 300; color: var(--accent); line-height: 1; margin-bottom: 6px; }
+.big-stat-label { font-size: 12px; color: var(--fg2); letter-spacing: 0.08em; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.stat-tile { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.stat-tile-num { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 300; margin-bottom: 4px; }
+.stat-tile-label { font-size: 11px; color: var(--fg3); }
+
+/* ── Bottom nav ── */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: rgba(245,245,243,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); padding: 12px 40px 24px; display: flex; justify-content: space-around; align-items: center; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--fg3); transition: color 0.2s; font-size: 10px; letter-spacing: 0.06em; min-width: 60px; text-align: center; }
+.nav-item.active { color: var(--accent); }
+.nav-icon { font-size: 20px; line-height: 1; margin-bottom: 1px; }
+
+/* ── Toast ── */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--fg); color: var(--bg2); font-size: 13px; font-weight: 500; padding: 10px 20px; border-radius: 999px; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 100; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 48px 24px; color: var(--fg3); }
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-text { font-size: 14px; line-height: 1.7; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.habit-item { animation: fadeIn 0.25s ease-out both; }
+</style>
+</head>
+<body>
+
+<!-- TODAY VIEW -->
+<div class="view active" id="view-today">
+  <div class="header">
+    <div class="header-top">
+      <span class="app-name">習慣トラッカー</span>
+      <span class="date-badge" id="date-label">—</span>
+    </div>
+    <div class="greeting" id="greeting">おはようございます</div>
+    <div class="greeting-sub" id="greeting-sub">今日も続けましょう</div>
+  </div>
+
+  <!-- Progress ring -->
+  <div class="progress-ring-wrap">
+    <svg width="130" height="130" viewBox="0 0 130 130">
+      <circle cx="65" cy="65" r="54" fill="none" stroke="#e2dfd9" stroke-width="9"/>
+      <circle id="progress-ring" cx="65" cy="65" r="54" fill="none" stroke="#5b8c2a" stroke-width="9"
+        stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3"
+        transform="rotate(-90 65 65)" style="transition:stroke-dashoffset 0.6s ease"/>
+      <text class="ring-text" x="65" y="62" text-anchor="middle" dominant-baseline="middle" id="ring-pct">0%</text>
+      <text class="ring-sub" x="65" y="80" text-anchor="middle" dominant-baseline="middle" id="ring-sub">達成率</text>
+    </svg>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num green" id="stat-done">0</div>
+      <div class="stat-lbl">完了</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-lbl">合計</div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-num" id="stat-streak" style="color:var(--warn)">0</div>
+      <div class="stat-lbl">🔥 連続</div>
+    </div>
+  </div>
+
+  <!-- Category filter -->
+  <div class="cat-filter" id="cat-filter"></div>
+
+  <!-- Habit list -->
+  <div class="section-label">
+    <span class="section-title">今日の習慣</span>
+    <span class="section-count" id="habit-count-label">0 件</span>
+  </div>
+  <div class="habit-list" id="habit-list"></div>
+
+  <!-- Add form -->
+  <div class="add-section">
+    <div class="section-label" style="padding:0;margin-bottom:10px">
+      <span class="section-title">習慣を追加</span>
+    </div>
+    <div class="add-form">
+      <input class="add-input" id="habit-input" type="text" placeholder="新しい習慣を入力..." maxlength="30">
+      <button class="add-btn" onclick="addHabit()">+</button>
+    </div>
+    <!-- Category select -->
+    <div class="cat-select-row" id="cat-select-row"></div>
+    <!-- Emoji picker -->
+    <div class="emoji-row" id="emoji-row"></div>
+  </div>
+</div>
+
+<!-- STATS VIEW -->
+<div class="view" id="view-stats">
+  <div class="header">
+    <div class="header-top"><span class="app-name">習慣トラッカー</span></div>
+    <div class="greeting">記録</div>
+    <div class="greeting-sub">あなたの積み上げ</div>
+  </div>
+  <div class="stats-view-content">
+    <div class="big-stat">
+      <div class="big-stat-num" id="stat-best-streak">0</div>
+      <div class="big-stat-label">最長連続記録（日）</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-tile"><div class="stat-tile-num" id="stat-total-checks">0</div><div class="stat-tile-label">累計チェック数</div></div>
+      <div class="stat-tile"><div class="stat-tile-num" id="stat-habit-count">0</div><div class="stat-tile-label">登録習慣数</div></div>
+      <div class="stat-tile"><div class="stat-tile-num" id="stat-today-rate">0%</div><div class="stat-tile-label">今月の達成率</div></div>
+      <div class="stat-tile"><div class="stat-tile-num" id="stat-days-used">1</div><div class="stat-tile-label">使用日数</div></div>
+    </div>
+    <!-- Category breakdown -->
+    <div class="section-label" style="padding:0;margin-bottom:12px">
+      <span class="section-title">カテゴリ別達成率（今月）</span>
+    </div>
+    <div class="cat-stat-row" id="cat-stat-row"></div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-today" onclick="switchView('today')">
+    <div class="nav-icon">☀️</div><span>今日</span>
+  </div>
+  <div class="nav-item" id="nav-stats" onclick="switchView('stats')">
+    <div class="nav-icon">📊</div><span>記録</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Categories ──
+const CATEGORIES = [
+  { id: 'health',  label: '健康',  emoji: '💪', color: '#4ade80' },
+  { id: 'study',   label: '学習',  emoji: '📚', color: '#60a5fa' },
+  { id: 'hobby',   label: '趣味',  emoji: '🎵', color: '#f472b6' },
+  { id: 'work',    label: '仕事',  emoji: '💼', color: '#fb923c' },
+  { id: 'mental',  label: '心身',  emoji: '🧘', color: '#a78bfa' },
+  { id: 'other',   label: 'その他',emoji: '⭐', color: '#94a3b8' },
+];
+const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
+
+const EMOJIS = ['🏃','📚','💧','🧘','✍️','🎵','🌿','🍎','💪','😴','🧹','🎯','💼','🎨','🎮'];
+
+let selectedEmoji = '⭐';
+let selectedCat = 'health';
+let filterCat = 'all';
+
+// ── Storage ──
+const DB_KEY = 'tsuzukeru_v2';
+function load() { try { return JSON.parse(localStorage.getItem(DB_KEY)) || defaultData(); } catch { return defaultData(); } }
+function save(d) { localStorage.setItem(DB_KEY, JSON.stringify(d)); }
+function defaultData() { return { habits: [], history: {}, bestStreak: 0, totalChecks: 0, startDate: today() }; }
+
+// ── Date helpers ──
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function todayLabel() {
+  const d = new Date();
+  return `${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`;
+}
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 5)  return ['おやすみなさい','また明日も続けましょう'];
+  if (h < 10) return ['おはようございます','今日も続けましょう'];
+  if (h < 17) return ['こんにちは','順調ですか？'];
+  return ['こんばんは','今日の振り返りを'];
+}
+function getWeekDates() {
+  const days = []; const d = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const dd = new Date(d); dd.setDate(d.getDate() - i);
+    const key = `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`;
+    days.push({ key, label: '日月火水木金土'[dd.getDay()], isToday: i === 0 });
+  }
+  return days;
+}
+function calcStreak(data) {
+  let streak = 0; const d = new Date();
+  for (let i = 0; i < 365; i++) {
+    const dd = new Date(d); dd.setDate(d.getDate() - i);
+    const key = `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`;
+    const hist = data.history[key]; const total = data.habits.length;
+    if (!hist || !total) break;
+    if (Object.values(hist).filter(Boolean).length < total) break;
+    streak++;
+  }
+  return streak;
+}
+function habitStreak(data, id) {
+  let s = 0; const d = new Date();
+  const isDoneToday = !!(data.history[today()] && data.history[today()][id]);
+  for (let i = isDoneToday ? 0 : 1; i <= 365; i++) {
+    const dd = new Date(d); dd.setDate(d.getDate() - i);
+    const key = `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`;
+    if (data.history[key] && data.history[key][id]) s++;
+    else break;
+  }
+  return s;
+}
+
+// ── Render ──
+function renderAll() {
+  const data = load();
+  const t = today();
+  if (!data.history[t]) data.history[t] = {};
+
+  // Header
+  document.getElementById('date-label').textContent = todayLabel();
+  const [g, gs] = greeting();
+  document.getElementById('greeting').textContent = g;
+  document.getElementById('greeting-sub').textContent = gs;
+
+  const allHabits = data.habits;
+  const filtered = filterCat === 'all' ? allHabits : allHabits.filter(h => h.cat === filterCat);
+  const done = filtered.filter(h => data.history[t][h.id]).length;
+  const total = filtered.length;
+  const totalAll = allHabits.length;
+
+  // Progress ring (based on filter)
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const circ = 2 * Math.PI * 54;
+  document.getElementById('progress-ring').style.strokeDashoffset = circ * (1 - pct / 100);
+  document.getElementById('ring-pct').textContent = pct + '%';
+
+  // Stats
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-total').textContent = total;
+  const streak = calcStreak(data);
+  document.getElementById('stat-streak').textContent = streak;
+  document.getElementById('habit-count-label').textContent = total + ' 件';
+
+  // Category filter tabs
+  const filterEl = document.getElementById('cat-filter');
+  filterEl.innerHTML = '';
+  const allBtn = document.createElement('button');
+  allBtn.className = 'cat-tab' + (filterCat === 'all' ? ' active' : '');
+  allBtn.textContent = 'すべて';
+  allBtn.style.background = filterCat === 'all' ? '#5b8c2a' : '';
+  allBtn.style.color = filterCat === 'all' ? '#fff' : '';
+  allBtn.onclick = () => { filterCat = 'all'; renderAll(); };
+  filterEl.appendChild(allBtn);
+
+  CATEGORIES.forEach(cat => {
+    const has = allHabits.some(h => h.cat === cat.id);
+    if (!has) return;
+    const btn = document.createElement('button');
+    btn.className = 'cat-tab' + (filterCat === cat.id ? ' active' : '');
+    btn.style.background = filterCat === cat.id ? cat.color : '';
+    btn.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cat.color};margin-right:4px;vertical-align:middle"></span>${cat.label}`;
+    btn.onclick = () => { filterCat = cat.id; renderAll(); };
+    filterEl.appendChild(btn);
+  });
+
+  // Habit list
+  const listEl = document.getElementById('habit-list');
+  listEl.innerHTML = '';
+
+  if (totalAll === 0) {
+    listEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-text">まだ習慣がありません<br>下から最初の習慣を追加してみましょう</div></div>`;
+  } else if (filtered.length === 0) {
+    listEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">このカテゴリの習慣はありません</div></div>`;
+  } else {
+    const sorted = [...filtered].sort((a, b) => {
+      const da = data.history[t][a.id] ? 1 : 0;
+      const db = data.history[t][b.id] ? 1 : 0;
+      return da - db;
+    });
+    sorted.forEach((h, idx) => {
+      const isDone = !!data.history[t][h.id];
+      const cat = CAT_MAP[h.cat] || CAT_MAP['other'];
+      const hs = habitStreak(data, h.id);
+      const el = document.createElement('div');
+      el.className = 'habit-item' + (isDone ? ' done' : '');
+      el.style.animationDelay = `${idx * 0.04}s`;
+      // Color bar
+      el.style.setProperty('--item-color', cat.color);
+      el.style.cssText += `--item-color:${cat.color}`;
+      el.innerHTML = `
+        <style>.habit-item[data-id="${h.id}"]::before { background: ${cat.color}; opacity: 1; }
+        .habit-item[data-id="${h.id}"].done .check-btn { background: ${cat.color}; border-color: ${cat.color}; }
+        .habit-item[data-id="${h.id}"].done { border-color: ${cat.color}44; background: ${cat.color}08; }
+        </style>
+        <div class="check-btn">
+          <svg class="check-icon" viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3"/></svg>
+        </div>
+        <div class="habit-info">
+          <div class="habit-name">${h.emoji} ${h.name}</div>
+          <div class="habit-meta">
+            <span class="cat-pill" style="background:${cat.color}22;color:${cat.color}">${cat.label}</span>
+            <span class="streak-dot" style="background:${isDone ? cat.color : 'var(--warn)'}"></span>
+            <span>${hs}日連続</span>
+          </div>
+        </div>
+        <button class="delete-btn" onclick="deleteHabit('${h.id}',event)">×</button>
+      `;
+      el.setAttribute('data-id', h.id);
+      el.addEventListener('click', e => { if (e.target.closest('.delete-btn')) return; toggleHabit(h.id); });
+      listEl.appendChild(el);
+    });
+  }
+
+
+  // Stats view
+  if (streak > (data.bestStreak || 0)) { data.bestStreak = streak; save(data); }
+  document.getElementById('stat-best-streak').textContent = data.bestStreak || streak;
+  document.getElementById('stat-total-checks').textContent = data.totalChecks || 0;
+  document.getElementById('stat-habit-count').textContent = totalAll;
+
+  // 今月の達成率を計算
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthDays = Object.keys(data.history).filter(k => k.startsWith(ym));
+  let monthTotal = 0, monthDone = 0;
+  monthDays.forEach(day => {
+    allHabits.forEach(h => {
+      monthTotal++;
+      if (data.history[day][h.id]) monthDone++;
+    });
+  });
+  document.getElementById('stat-today-rate').textContent = (monthTotal ? Math.round(monthDone / monthTotal * 100) : 0) + '%';
+
+  const start = new Date(data.startDate || today());
+  document.getElementById('stat-days-used').textContent = Math.max(1, Math.round((new Date() - start) / 86400000) + 1);
+
+  // カテゴリ別今月達成率
+  const catRow = document.getElementById('cat-stat-row');
+  catRow.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const inCat = allHabits.filter(h => h.cat === cat.id);
+    if (!inCat.length) return;
+    let catTotal = 0, catDone = 0;
+    monthDays.forEach(day => {
+      inCat.forEach(h => {
+        catTotal++;
+        if (data.history[day][h.id]) catDone++;
+      });
+    });
+    const pctCat = catTotal ? Math.round(catDone / catTotal * 100) : 0;
+    catRow.innerHTML += `
+      <div class="cat-stat-item">
+        <span class="cat-stat-label">${cat.emoji} ${cat.label}</span>
+        <div class="cat-stat-bar-wrap">
+          <div class="cat-stat-bar" style="width:${pctCat}%;background:${cat.color}"></div>
+        </div>
+        <span class="cat-stat-pct">${pctCat}%</span>
+      </div>`;
+  });
+  if (!catRow.innerHTML) catRow.innerHTML = '<p style="font-size:13px;color:var(--fg3)">習慣を追加するとここに表示されます</p>';
+}
+
+// ── Actions ──
+function toggleHabit(id) {
+  const data = load(); const t = today();
+  if (!data.history[t]) data.history[t] = {};
+  const was = data.history[t][id];
+  data.history[t][id] = !was;
+  if (!was) { data.totalChecks = (data.totalChecks || 0) + 1; showToast('✓ チェック！'); }
+  save(data); renderAll();
+}
+function deleteHabit(id, e) {
+  e.stopPropagation();
+  if (!confirm('この習慣を削除しますか？')) return;
+  const data = load();
+  data.habits = data.habits.filter(h => h.id !== id);
+  save(data); renderAll(); showToast('削除しました');
+}
+function addHabit() {
+  const input = document.getElementById('habit-input');
+  const name = input.value.trim();
+  if (!name) return;
+  const data = load();
+  data.habits.push({ id: Date.now().toString(), name, emoji: selectedEmoji, cat: selectedCat });
+  save(data); input.value = ''; renderAll();
+  showToast('習慣を追加しました！');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  document.getElementById('nav-' + v).classList.add('active');
+  renderAll();
+}
+
+// ── Category select buttons in add form ──
+const catSelectRow = document.getElementById('cat-select-row');
+CATEGORIES.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.className = 'cat-select-btn' + (cat.id === selectedCat ? ' selected' : '');
+  btn.style.background = cat.id === selectedCat ? cat.color : '';
+  btn.innerHTML = `<span class="cat-dot" style="background:${cat.color}"></span>${cat.label}`;
+  btn.onclick = () => {
+    selectedCat = cat.id;
+    document.querySelectorAll('.cat-select-btn').forEach((b, i) => {
+      b.classList.toggle('selected', CATEGORIES[i].id === cat.id);
+      b.style.background = CATEGORIES[i].id === cat.id ? CATEGORIES[i].color : '';
+    });
+  };
+  catSelectRow.appendChild(btn);
+});
+
+// ── Emoji picker ──
+const emojiRow = document.getElementById('emoji-row');
+EMOJIS.forEach(e => {
+  const btn = document.createElement('button');
+  btn.className = 'emoji-opt' + (e === selectedEmoji ? ' selected' : '');
+  btn.textContent = e;
+  btn.onclick = () => {
+    selectedEmoji = e;
+    document.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  };
+  emojiRow.appendChild(btn);
+});
+
+document.getElementById('habit-input').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
+renderAll();
+</script>
+</body>
+</html>
